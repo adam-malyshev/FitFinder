@@ -1,0 +1,34 @@
+{
+  "name": "fitfinder",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moogatomic/fitfinder.git"
+  },
+  "dependencies": {
+    "@google-cloud/firestore": "^3.7.2",
+    "body-parser": "^1.19.0",
+    "connect-ensure-login": "^0.1.1",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "dotenv": "^8.2.0",
+    "express": "^4.16.4",
+    "express-session": "^1.17.0",
+    "formidable": "^1.2.2",
+    "fs": "0.0.1-security",
+    "lowdb": "^1.0.0",
+    "morgan": "~1.9.1",
+    "passport": "^0.4.1",
+    "passport-local": "^1.0.0",
+    "path": "^0.12.7",
+    "url": "^0.11.0"
+  },
+  "description": "An application designed to suggest an outfit to the user based upon their preferences and wardrobe.",
+  "main": "app.js",
+  "author": "Adam Malyshev",
+  "license": "Apache-2.0"
+}
