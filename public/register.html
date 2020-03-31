@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<body>
+   <form action="/register" method="post" enctype="multipart/form-data">
+      <label for="name">Name:</label>
+      <input type="name" name="name"/>
+      <label for="username">Username:</label>
+      <input type="text" name="username"/>
+      <label for="password">Password:</label>
+      <input type="text" name="password"/>
+      <input type="button" onclick="post(this)" value="Register"/>
+  </form>
+   <script>
+      function post(obj) {
+         console.log(obj.form.body);
+         obj.form.submit();
+      }
+   </script>
+</body>
+</htmL>
