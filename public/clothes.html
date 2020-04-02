@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<body>
+<a href="/logout"> Log Out </a><br>
+
+<p>Enter the pieces of clothing. Click submit to add it to the database, then type in a new article of clothing in the boxes. Repeat as many times as needed</p>
+
+<form action="/add" method="post" id="frm1" enctype="multipart/form-data">
+  Name: <input type="text" name="name" id="name" autocomplete="off"><br>
+  <select name="type" id="type">
+  	<option value="shirt">Shirt</option>
+  	<option value="pants">Pants</option>
+  </select><br>
+  Color: <input type="text" name="color" id ="color"><br><br>
+  Image: <input type="file" name="image" id="image"><br>
+  <input type="button" onclick="post(this)" value="Add Item">
+ </form>
+
+ <div id="clothes"></div>
+ <div id="edit"></div>
+
+<p id="output"></p>
+<script>
+ 	var clothes=[];
+ 	var x= 0;
+ 	var combinations = [{"color1":"black", "color2":"pink"}, {"color1":"black", "color2":"blue"}, {"color1":"red", "color2":"grey"}, {"color1":"tan", "color2":"pink"}, {"color1":"grey", "color2":"green"}, {"color1":"white", "color2":"black"}];
+ 	function err() {
+ 		document.getElementById("output").innerHTML = "No clothes were found for you in that color, try another color.";
+ 	}
+	// function input(obj) {
+ //  		var name = document.getElementById("name").value;
+ //  		var color = document.getElementById("color").value;
+ //  		var type = document.getElementById("type").value;
+ //  		var aritcle_of_clothing = {'name':name, 'type':type, 'color':color}
+ //  		clothes[x]=aritcle_of_clothing;
+ //  		x++;
+ //  		console.log(clothes);
+ //  		obj.form.submit();
+ //  	}
+  	function post(obj) {
+  		console.log(obj.form.body);
+  		obj.form.submit();
+  	}
+	// function suggestor(obj){
+	// 	var x=0;
+	// 	var prefcolor =document.getElementById("prefcolor").value;
+	// 	var shirt;
+	// 	var pants;
+	// 	while(x<clothes.length){
+	// 		if(clothes[x].color == prefcolor){
+	// 			if(clothes[x].type == "shirt"){
+	// 				shirt = clothes[x];
+	// 			}else if (clothes[x].type == "pants"){
+	// 				pants = clothes[x];
+	// 			}
+	// 		}
+	// 		x++;
+	// 	}
+	// 	x=0;
+	// 	while(x<clothes.length){
+	// 		if(clothes[x].color == prefcolor && shirt == null && clothes[x].type == shirt){
+	// 			shirt=clothes[x];
+	// 		}else if (clothes[x].color == prefcolor && pants == null && clothes[x].type == pants){
+	// 			pants=clothes[x];
+	// 		}
+	// 		x++;
+	// 	}
+	// 	if (shirt == null || pants == null){
+	// 		err();
+	// 	}else {
+	// 		document.getElementById("output").innerHTML = "You should wear " + shirt.name + " and " + pants.name + ".";
+	// 	}
+	// }
+
+	function addRow(obj){
+		var out = "<tr>";
+		out += "<td><img src='/page/images/" + obj.image + "' alt='" + obj.name + "'>";
+		out += "<td>" + obj.name + "</td>";
+		out += "<td>" + obj.type + "</td>";
+		out += "<td>" + obj.color + "</td>";
+		out += "<td><button onclick='del(" + obj.id+ ")'> X </button></td>";
+		out += "<td><button onclick='edit(" + obj.id + ")'> Edit </button></td>"
+		out += "</tr>";
+		console.log(obj.id);
+		return out;
+	}
+	function del(id){
+		var xhd = new XMLHttpRequest();
+
+		xhd.onreadystatechange = function() {
+		    if (xhd.readyState === 4){
+		    	var data = JSON.parse(xhd.responseText);
+		        document.getElementById('clothes').innerHTML = table(data);
+		    }
+		};
+		xhd.open("GET", "/delete?id="+id);
+		xhd.send();
+	};
+
+	function edit(id) {
+		console.log(id);
+		var x = "<form action='/edit?id=" + id + "' method='post' id='frm1' enctype='multipart/form-data'> Name: <input type='text' name='name' id='name'><br><select name='type' id='type'><option value='shirt'>Shirt</option><option value='pants'>Pants</option></select><br>Color: <input type='text' name='color' id ='color'><br> Image: <input type='file' name='image' id='image'><br><br> <input type='button' onclick='post(this)' value='Update'></form>"
+		document.getElementById('edit').innerHTML = x;
+
+	}
+
+	function table(obj){
+		var list_html = "<table style='width:100%''>";
+
+	    list_html += "<tr>";
+	    list_html += "<th>Image</th>";
+	    list_html += "<th>Name</th>";
+	 	list_html += "<th>Type</th>";
+	 	list_html += "<th>Color</th>";
+	 	list_html += "</tr>";
+
+	    for(var i=0;i<obj.length;i++){
+
+	    	list_html += addRow(obj[i]);
+	    }
+
+	    list_html += "</table>";
+	    return list_html;
+	}
+
+	var xhr = new XMLHttpRequest();
+
+	xhr.onreadystatechange = function() {
+	    if (xhr.readyState === 4){
+	    	var data = JSON.parse(xhr.responseText);
+	      document.getElementById('clothes').innerHTML = table(data);
+	    }
+	};
+
+	xhr.open('GET', '/view');
+	xhr.send();
+
+</script>
+
+</body>
+</html>
