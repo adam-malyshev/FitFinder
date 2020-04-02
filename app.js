@@ -14,24 +14,26 @@ const Firestore = require('@google-cloud/firestore');
 
 const db = new Firestore({
   projectId: 'plasma-geode-271605',
-  keyFilename: '${process.env.GOOGLE_APPLICATION_CREDENTIALS}',
+  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
 });
 
 // Set some defaults (required if your JSON file is empty)
 // db.defaults({ users:[{name:'adam', username:'adam', password:1234, id:1, data: [{"name": "a","type": "shirt","color": "Blue","image": "shirt.jpeg","id": "1581913227641"},{"name": "Jeans","type": "shirt","color": "Blue","image": "shirt.jpeg","id": "1581913980798"}]}] })
 //    .write()
-
+console.log("Image path: "+path.join(__dirname,'images'));
 let users = db.collection('users');
 
-users.add({
-   name:'adam',
-   username:'adam',
-   password:1234,
-   id:1,
-   data: [{"name": "a","type": "shirt","color": "Blue","image": "shirt.jpeg","id": "1581913227641"},{"name": "Jeans","type": "shirt","color": "Blue","image": "shirt.jpeg","id": "1581913980798"}]
-}).then(ref => {
-   console.log("Added Default with Id: "+ ref.id);
+users.doc("xjEsI36jVTcK238fGI9g").set({
+  name:'adam',
+  username:'adam',
+  password:1234,
+  data: [{"name": "a","type": "shirt","color": "Blue","image": "shirt.jpeg","id": "1581913227641"},{"name": "Jeans","type": "shirt","color": "Blue","image": "shirt.jpeg","id": "1581913980798"}]
+}).then(() => {
+  users.doc("xjEsI36jVTcK238fGI9g").update({id:"xjEsI36jVTcK238fGI9g"});
+  console.log("default set");
 });
+
+
 // Passport
 
 findById = function(id, cb) {
@@ -43,7 +45,7 @@ findById = function(id, cb) {
            cb(null, doc.data());
         }
      }).catch(err => {
-         console.log('Error getting document', err);
+         console.log('Error getting user', err);
      });
   });
 }
@@ -59,6 +61,8 @@ findByUsername = function(username, cb) {
             return cb(null, doc.data());
          });
 
+      }).catch(err => {
+          console.log("Error getting user", err);
       });
 
    });
@@ -85,17 +89,15 @@ passport.use(new LocalStrategy(
 // serializing, and querying the user record by ID from the database when
 // deserializing.
 passport.serializeUser(function(user, done) {
-	console.log(user);
-   users.where('username', '==', user.username).get().then(doc => {
-      done(null, doc.id);
-   });
 
-   users.where('username', '==', username).get().then(snapshot => {
+   users.where('username', '==', user.username).get().then(snapshot => {
       if (snapshot.empty) {
-         return cb(null, null);
+         done(null, null);
+         console.log("Error finding user")
       }
       snapshot.forEach(doc => {
-         return cb(null, doc.data());
+         done(null, doc.id);
+         console.log("User: "+doc.id+" has been found")
       });
 
    });
@@ -115,19 +117,20 @@ var loggedin = false;
 var options = {
 	root:path.join(__dirname,'public')
 };
-function read(user) {
-	//get the user object by searching database for the same username
-	var user = db.get('users').find({username:user.username}).value();
-	//if the user is not found
-	if (!user) {console.log("No user "+user.username+" found in db")}
-	return user.data;
 
+async function read(user) {
+	//get the user and return the data by searching with user id
+  const doc = await users.doc(user.id).get();
+
+  if (!doc.exists) {
+      console.log("The user " + user.username + " has not been found");
+  }
+  return doc.data().data;
 }
 
 function save(user, obj) {
-	var user = db.get('users').find({username:user.username}).value();
-	if (!user) console.log("No user "+user.username+" found in db");
-	db.get('users').find({username:user.username}).assign({data:obj}).write();
+  console.log("data to be updated: ", obj);
+	users.doc(user.id).update({data:obj});
 }
 
 // Use application-level middleware for common functionality, including
@@ -141,7 +144,7 @@ app.use(passport.session());
 
 // Routes
 
-app.use(express.urlencoded());
+//app.use(express.urlencoded());
 
 app.get('/', function(req,res){
 
@@ -173,12 +176,13 @@ app.post('/login',
 app.post('/register', function(req, res){
 	 var form = new formidable.IncomingForm();
 	 form.parse(req, function (err, fields, files) {
-	 	if (err) throw err;
+	    if (err) throw err;
       fields.data = [];
       users.add(fields).then(ref => {
-         console.log("Added user: "+ ref.id);
+        users.doc(ref.id).update({id:ref.id});
+        console.log("Added user: "+ ref.id);
       });
-		res.redirect('/login');
+	    res.redirect('/login');
 	});
 });
 app.get('/logout',
@@ -187,39 +191,36 @@ app.get('/logout',
     res.redirect('/');
  });
 
-app.post('/add', function (req, res) {
-	var clothes = read(req.user);
-	console.log("clothes:" + clothes);
+app.post('/add', async function (req, res) {
+	var clothes = await read(req.user);
 	var form = new formidable.IncomingForm();
 	form.parse(req, function (err, fields, files) {
-	  	// console.log(fields);
-	  	// console.log(files);
 
-	  	// move file to /public
+	  // move file to /public/images
 		var oldpth = files.image.path;
-		var newpth = "/home/adam_malyshev/fitfinder/public/images" + files.image.name;
-		console.log(oldpth);
-		fs.rename(oldpth, newpth, function (err){
-			if (err) throw err;
-		});
+    if(files.image.name){
+      var newpth = path.join(__dirname, 'public')+"/images/" + files.image.name;
+      
+  		fs.rename(oldpth, newpth, function (err){
+  			if (err) throw err;
+  		});
+    }
 		var cloth = fields;
 		cloth.image = files.image.name;
 		var d = new Date();
 		var id = d.getTime();
 		cloth.id = id;
 		clothes.push(cloth);
-		console.log(clothes);
+
 		// save items to file here
-
 		save(req.user, clothes);
-
 		res.redirect('/wardrobe');
 	});
 });
 
-app.get('/delete', function(req,res) {
+app.get('/delete', async function(req,res) {
 	var q = url.parse(req.url, true).query;
-	var clothes = read(req.user);
+	var clothes = await read(req.user);
 	for(i=0;i<clothes.length;i++){
 		if (clothes[i].id == q.id){
 			clothes.splice(i,1);
@@ -230,14 +231,15 @@ app.get('/delete', function(req,res) {
 	res.send(clothes);
 });
 
-app.post('/edit', function(req,res){
+app.post('/edit', async function(req,res){
+  var clothes = await read(req.user);
 	var form = new formidable.IncomingForm();
    form.parse(req, function (err, fields, files) {
 		//save new image, replace old one
-		var clothes = read(req.user);
+
 		var oldpth = files.image.path;
-		var newpth = "/Users/adam/projects/js/wardrobe/public/images/" + files.image.name;
-		console.log(oldpth);
+		var newpth = path.join(__dirname, 'public')+"/images/" + files.image.name;
+
 		fs.rename(oldpth, newpth, function (err){
 			if (err) throw err;
 		});
@@ -248,19 +250,23 @@ app.post('/edit', function(req,res){
 		cloth.id = q.id;
 		console.log(cloth);
 		console.log(req.url);
+
 		for(i=0;i<clothes.length;i++){
 			if(clothes[i].id == cloth.id){
 				clothes[i] = cloth;
 			}
 		}
+
 		save(req.user, clothes);
 		res.redirect('/wardrobe');
 	});
 });
-app.get('/view', require('connect-ensure-login').ensureLoggedIn() , function (req, res) {
-	console.log("user: ",req.user);
-	res.send(read(req.user));
+app.get('/view', require('connect-ensure-login').ensureLoggedIn() , async function (req, res) {
+
+  const user = await read(req.user);
+
+	res.send(user);
 });
 
 app.use('/page', express.static(path.join(__dirname, 'public')));
-app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+app.listen(process.env.PORT, () => console.log(`Example app listening on port ` + process.env.PORT + `!`));

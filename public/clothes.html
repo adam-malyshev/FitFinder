@@ -128,7 +128,7 @@
 	xhr.onreadystatechange = function() {
 	    if (xhr.readyState === 4){
 	    	var data = JSON.parse(xhr.responseText);
-	        document.getElementById('clothes').innerHTML = table(data);
+	      document.getElementById('clothes').innerHTML = table(data);
 	    }
 	};
 
