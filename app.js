@@ -17,6 +17,7 @@ const db = new Firestore({
   keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
 });
 
+const images = require('./public/javascripts/images')
 // Set some defaults (required if your JSON file is empty)
 // db.defaults({ users:[{name:'adam', username:'adam', password:1234, id:1, data: [{"name": "a","type": "shirt","color": "Blue","image": "shirt.jpeg","id": "1581913227641"},{"name": "Jeans","type": "shirt","color": "Blue","image": "shirt.jpeg","id": "1581913980798"}]}] })
 //    .write()
@@ -191,31 +192,22 @@ app.get('/logout',
     res.redirect('/');
  });
 
-app.post('/add', async function (req, res) {
+app.post('/add', images.multer.single('image'), images.uploadImage, async (req, res) => {
 	var clothes = await read(req.user);
-	var form = new formidable.IncomingForm();
-	form.parse(req, function (err, fields, files) {
+  var cloth = req.body;
 
-	  // move file to /public/images
-		var oldpth = files.image.path;
-    if(files.image.name){
-      var newpth = path.join(__dirname, 'public')+"/images/" + files.image.name;
-      
-  		fs.rename(oldpth, newpth, function (err){
-  			if (err) throw err;
-  		});
-    }
-		var cloth = fields;
-		cloth.image = files.image.name;
-		var d = new Date();
-		var id = d.getTime();
-		cloth.id = id;
-		clothes.push(cloth);
+  if(req.file && req.file.cloudStoragePublicUrl) {
+    cloth.imgUrl = req.file.cloudStoragePublicUrl;
+  }
 
-		// save items to file here
-		save(req.user, clothes);
-		res.redirect('/wardrobe');
-	});
+	var d = new Date();
+	var id = d.getTime();
+	cloth.id = id;
+	clothes.push(cloth);
+
+	// save items to file here
+	save(req.user, clothes);
+	res.redirect('/wardrobe');
 });
 
 app.get('/delete', async function(req,res) {
@@ -231,35 +223,22 @@ app.get('/delete', async function(req,res) {
 	res.send(clothes);
 });
 
-app.post('/edit', async function(req,res){
-  var clothes = await read(req.user);
-	var form = new formidable.IncomingForm();
-   form.parse(req, function (err, fields, files) {
-		//save new image, replace old one
+app.post('/edit', images.multer.single('image'), images.uploadImage, async (req, res) => {
+	var clothes = await read(req.user);
+  var cloth = req.body;
 
-		var oldpth = files.image.path;
-		var newpth = path.join(__dirname, 'public')+"/images/" + files.image.name;
+  if(req.file && req.file.cloudStoragePublicUrl) {
+    cloth.imgUrl = req.file.cloudStoragePublicUrl;
+  }
 
-		fs.rename(oldpth, newpth, function (err){
-			if (err) throw err;
-		});
-
-		var cloth = fields;
-		cloth.image = files.image.name;
-		var q = url.parse(req.url, true).query;
-		cloth.id = q.id;
-		console.log(cloth);
-		console.log(req.url);
-
-		for(i=0;i<clothes.length;i++){
-			if(clothes[i].id == cloth.id){
-				clothes[i] = cloth;
-			}
+	for(i=0;i<clothes.length;i++){
+		if(clothes[i].id == cloth.id){
+			clothes[i] = cloth;
 		}
+	}
 
-		save(req.user, clothes);
-		res.redirect('/wardrobe');
-	});
+	save(req.user, clothes);
+	res.redirect('/wardrobe');
 });
 app.get('/view', require('connect-ensure-login').ensureLoggedIn() , async function (req, res) {
 
