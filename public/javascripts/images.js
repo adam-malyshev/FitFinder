@@ -1,11 +1,11 @@
 const {Storage} = require('@google-cloud/storage');
 const storage = new Storage({keyFilename:process.env.GOOGLE_APPLICATION_CREDENTIALS});
-const bucket = storage.bucket('fit_finder');
+const bucket = storage.bucket(process.env.BUCKET);
 const Multer = require('Multer');
 
 
 function getPublicUrl(filename) {
-  return `https://storage.googleapis.com/fit_finder/${filename}`;
+  return `https://storage.googleapis.com/` + process.env.BUCKET + `/${filename}`;
 }
 
 function uploadImage(req, res, next) {

@@ -1,23 +1,47 @@
 <!DOCTYPE html>
 <html>
+<head>
+  <link rel="stylesheet" href="/page/stylesheets/style.css" >
+  <script src="https://kit.fontawesome.com/3f0816ae9e.js" crossorigin="anonymous"></script>
+</head>
 <body>
-<a href="/logout"> Log Out </a><br>
 
-<p>Enter the pieces of clothing. Click submit to add it to the database, then type in a new article of clothing in the boxes. Repeat as many times as needed</p>
+<div class="header">
+  <h2>fitfinder</h2>
+</div>
+<div class="topnav">
+  <a href="/wardrobe" class="active">Wardrobe</a>
+  <a href="/logout" class="account"> Log Out </a>
+</div>
 
-<form action="/add" method="post" id="frm1" enctype="multipart/form-data">
-  Name: <input type="text" name="name" id="name" autocomplete="off"><br>
-  <select name="type" id="type">
-  	<option value="shirt">Shirt</option>
-  	<option value="pants">Pants</option>
-  </select><br>
-  Color: <input type="text" name="color" id ="color"><br><br>
-  Image: <input type="file" name="image" id="image"><br>
-  <input type="button" onclick="post(this)" value="Add Item">
- </form>
 
- <div id="clothes"></div>
- <div id="edit"></div>
+<div class="content">
+
+    <p>Add Clothes:</p>
+    <form action="/add" method="post" id="frm1" enctype="multipart/form-data">
+
+      <input class="text" type="text" name="name" id="name" autocomplete="off" placeholder="Name">
+
+      <select name="type" id="type">
+      <option value="shirt">Shirt</option>
+      <option value="pants">Pants</option>
+      </select>
+
+      <input class="text" type="text" name="color" id ="color" placeholder="Color">
+      <label for="image">Image:</label>
+      <div class='image'>
+      <input type="file" name="image" id="image">
+      </div>
+      <input class="button" type="button" onclick="post(this)" value="Add Item">
+
+    </form>
+    <br>
+    <br>
+    <div id="edit"></div>
+</div>
+<br>
+<div style="overflow-x:auto;" id="clothes" class="table" ></div>
+
 
 <p id="output"></p>
 <script>
@@ -78,8 +102,8 @@
 		out += "<td>" + obj.name + "</td>";
 		out += "<td>" + obj.type + "</td>";
 		out += "<td>" + obj.color + "</td>";
-		out += "<td><button onclick='del(" + obj.id+ ")'> X </button></td>";
-		out += "<td><button onclick='edit(" + obj.id + ")'> Edit </button></td>"
+		out += "<td><button onclick='del(" + obj.id+ ")'> <i class='fas fa-trash-alt'></i> </button></td>";
+		out += "<td><button onclick='edit(" + obj.id + ")'> <i class='fas fa-edit'></i> </button></td>";
 		out += "</tr>";
 		console.log(obj.id);
 		return out;
@@ -99,20 +123,22 @@
 
 	function edit(id) {
 		console.log(id);
-		var x = "<form action='/edit?id=" + id + "' method='post' id='frm1' enctype='multipart/form-data'> Name: <input type='text' name='name' id='name'><br><select name='type' id='type'><option value='shirt'>Shirt</option><option value='pants'>Pants</option></select><br>Color: <input type='text' name='color' id ='color'><br> Image: <input type='file' name='image' id='image'><br><br> <input type='button' onclick='post(this)' value='Update'></form>"
+		var x = "<form action='/edit?id=" + id + "' method='post' id='frm1' enctype='multipart/form-data'> <input class='text' type='text' name='name' id='name' placeholder='Name'><select name='type' id='type'><option value='shirt'>Shirt</option><option value='pants'>Pants</option></select><input class='text' type='text' name='color' id ='color' placeholder='Color'><label for='image'> Image: </label> <input type='file' name='image' id='image'><input class='button' type='button' onclick='post(this)' value='Update'></form>"
 		document.getElementById('edit').innerHTML = x;
 
 	}
 
 	function table(obj){
-		var list_html = "<table style='width:100%''>";
+		var list_html = "<table>";
 
 	    list_html += "<tr>";
 	    list_html += "<th>Image</th>";
 	    list_html += "<th>Name</th>";
-	 	list_html += "<th>Type</th>";
-	 	list_html += "<th>Color</th>";
-	 	list_html += "</tr>";
+	 	  list_html += "<th>Type</th>";
+	 	  list_html += "<th>Color</th>";
+      list_html += "<th> </th>";
+      list_html += "<th> </th>";
+	 	  list_html += "</tr>";
 
 	    for(var i=0;i<obj.length;i++){
 
