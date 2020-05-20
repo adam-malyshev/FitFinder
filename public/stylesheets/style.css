@@ -83,11 +83,15 @@ body{
   border-radius:4px;
   background-color: #d3ced3;
 }
-.content .image, label{
+.content #imageUpload label{
   width:48%;
   font-size:85%;
   border:hidden;
   box-sizing: border-box;
+}
+.content #img img {
+    margin-top: 1%;
+    margin-bottom: 1%;
 }
 
 .content .button{
@@ -113,7 +117,7 @@ body{
 .table table{
   border-collapse: collapse;
   width:100%;
-  table-layout: auto;
+  table-layout: fixed;
 }
 .table th {
   font-weight: normal;
@@ -130,9 +134,10 @@ body{
 
 .table img{
   float:left;
-  height:100px;
-  width:100px;
   object-fit:cover;
+  width:100px;
+  height:100px;
+
 }
 
 .table button{
@@ -151,4 +156,24 @@ body{
 
 .table button:hover{
   background-color: #ddd;
+}
+
+#result ul {
+    width:60%;
+    float:right;
+    padding:4% 2% 2% 2%;
+}
+
+
+#result li {
+    float:right;
+    width:100%;
+    text-align: center;
+}
+
+#result img {
+
+    width:200px;
+    height: 200px;
+    object-fit: cover;
 }

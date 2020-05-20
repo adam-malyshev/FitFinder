@@ -11,8 +11,10 @@
 </div>
 <div class="topnav">
   <a href="/wardrobe" class="active">Wardrobe</a>
+  <a href="/prefrences"> Prefrences </a>
   <a href="/logout" class="account"> Log Out </a>
 </div>
+
 
 
 <div class="content">
@@ -98,12 +100,12 @@
 
 	function addRow(obj){
 		var out = "<tr>";
-		out += "<td><img src='" + obj.imgUrl + "' alt='" + obj.name + "'>";
-		out += "<td>" + obj.name + "</td>";
-		out += "<td>" + obj.type + "</td>";
-		out += "<td>" + obj.color + "</td>";
-		out += "<td><button onclick='del(" + obj.id+ ")'> <i class='fas fa-trash-alt'></i> </button></td>";
-		out += "<td><button onclick='edit(" + obj.id + ")'> <i class='fas fa-edit'></i> </button></td>";
+		out += "<td style='width:100%'><img src='" + obj.imgUrl + "' alt='" + obj.name + "'>";
+		out += "<td style='width:100%'>" + obj.name + "</td>";
+		out += "<td style='width:100%'>" + obj.type + "</td>";
+		out += "<td style='width:100%'>" + obj.color + "</td>";
+		out += "<td style='width:30px'><button onclick='del(" + obj.id+ ")'> <i class='fas fa-trash-alt'></i> </button></td>";
+		out += "<td style='width:30px'><button onclick='edit(" + obj.id + ")'> <i class='fas fa-edit'></i> </button></td>";
 		out += "</tr>";
 		console.log(obj.id);
 		return out;
@@ -149,18 +151,22 @@
 	    return list_html;
 	}
 
-	var xhr = new XMLHttpRequest();
+    function view(){
+        alert("Hello!");
+    	var xhr = new XMLHttpRequest();
 
-	xhr.onreadystatechange = function() {
-	    if (xhr.readyState === 4){
-	    	var data = JSON.parse(xhr.responseText);
-	      document.getElementById('clothes').innerHTML = table(data);
-	    }
-	};
-
-	xhr.open('GET', '/view');
-	xhr.send();
-
+    	xhr.onreadystatechange = function() {
+    	    if (xhr.readyState === 4){
+    	    	var data = JSON.parse(xhr.responseText);
+    	        document.getElementById('clothes').innerHTML = table(data);
+    	    }
+    	};
+    	xhr.open('GET', '/view');
+        xhr.send();
+    }
+    view();
+    console.log("peepee");
+    setTimeout(function () { alert('Hello'); } , 1000);
 </script>
 
 </body>

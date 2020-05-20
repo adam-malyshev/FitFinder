@@ -11,28 +11,31 @@ const LocalStrategy = require('passport-local').Strategy;
 const dotenv = require('dotenv');
 dotenv.config();
 const Firestore = require('@google-cloud/firestore');
+const Algorithmia = require("algorithmia");
 
 const db = new Firestore({
   projectId: 'plasma-geode-271605',
   keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
 });
 
-const images = require('./public/javascripts/images')
+const images = require('./public/javascripts/images');
+
+var pending = false;
 // Set some defaults (required if your JSON file is empty)
 // db.defaults({ users:[{name:'adam', username:'adam', password:1234, id:1, data: [{"name": "a","type": "shirt","color": "Blue","image": "shirt.jpeg","id": "1581913227641"},{"name": "Jeans","type": "shirt","color": "Blue","image": "shirt.jpeg","id": "1581913980798"}]}] })
 //    .write()
 console.log("Image path: "+path.join(__dirname,'images'));
 let users = db.collection('users');
 
-users.doc("xjEsI36jVTcK238fGI9g").set({
-  name:'adam',
-  username:'adam',
-  password:1234,
-  data: [{"name": "a","type": "shirt","color": "Blue","image": "shirt.jpeg","id": "1581913227641"},{"name": "Jeans","type": "shirt","color": "Blue","image": "shirt.jpeg","id": "1581913980798"}]
-}).then(() => {
-  users.doc("xjEsI36jVTcK238fGI9g").update({id:"xjEsI36jVTcK238fGI9g"});
-  console.log("default set");
-});
+// users.doc("xjEsI36jVTcK238fGI9g").set({
+//   name:'adam',
+//   username:'adam',
+//   password:1234,
+//   data: [{"name": "a","type": "shirt","color": "Blue","image": "shirt.jpeg","id": "1581913227641"},{"name": "Jeans","type": "shirt","color": "Blue","image": "shirt.jpeg","id": "1581913980798"}]
+// }).then(() => {
+//   users.doc("xjEsI36jVTcK238fGI9g").update({id:"xjEsI36jVTcK238fGI9g"});
+//   console.log("default set");
+// });
 
 
 // Passport
@@ -134,6 +137,41 @@ function save(user, obj) {
 	users.doc(user.id).update({data:obj});
 }
 
+async function update(id, user, obj) {
+    var data = await read(user);
+
+
+    for (i=0 ; i<data.length ; i++){
+        if (data[i].id == id){
+            data[i] = obj;
+
+        }
+    }
+    save(user, data);
+}
+
+function genId () {
+
+    var length = 8;
+    var timestamp = +new Date;
+
+    var _getRandomInt = function( min, max ) {
+        return Math.floor( Math.random() * ( max - min + 1 ) ) + min;
+    }
+
+    var ts = timestamp.toString();
+    var parts = ts.split( "" ).reverse();
+    var id = "";
+    for( var i = 0; i < length; ++i ) {
+        var index = _getRandomInt( 0, parts.length - 1 );
+        id += parts[index];
+    }
+
+     return id;
+}
+
+
+
 // Use application-level middleware for common functionality, including
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({ secret: 'keyboard cat', resave: false, saveUninitialized: false }));
@@ -148,7 +186,6 @@ app.use(passport.session());
 //app.use(express.urlencoded());
 
 app.get('/', function(req,res){
-
 	res.sendFile('./welcome.html', options, function(err){
 		if (err) throw err;
 	});
@@ -165,11 +202,34 @@ app.get('/register', function(req, res){
   		if (err) throw err;
   	});
 });
+
 app.get('/wardrobe', require('connect-ensure-login').ensureLoggedIn() , function(req, res){
-	res.sendFile('./clothes.html', options, function(err){
-  		if (err) throw err;
-  	});
+    const q = url.parse(req.url, true).query;
+    if (q.manual == "true") {
+        res.sendFile('./clothes.html', options, function(err){
+            if (err) throw err;
+        });
+    }else {
+        res.sendFile('./autoclothes.html', options, function(err){
+            if (err) throw err;
+        });
+    }
 });
+
+app.get('/prefrences', require('connect-ensure-login').ensureLoggedIn(), (req,res) => {
+  res.sendFile('./prefrences.html', options, function(err){
+  		if (err) throw err;
+  });
+});
+
+app.get('/logout',
+  function(req, res){
+    req.logout();
+    res.redirect('/');
+ });
+
+
+
 app.post('/login',
   passport.authenticate('local', { successRedirect: '/wardrobe',
                                    failureRedirect: '/login' })
@@ -186,36 +246,90 @@ app.post('/register', function(req, res){
 	    res.redirect('/login');
 	});
 });
-app.get('/logout',
-  function(req, res){
-    req.logout();
-    res.redirect('/');
- });
+
 
 app.post('/add', images.multer.single('image'), images.uploadImage, async (req, res) => {
 	var clothes = await read(req.user);
-  var cloth = req.body;
+    var cloth = [{}];
+    var imgUrl;
+    var color= req.body.color;
+    if(req.file && req.file.cloudStoragePublicUrl) {
+        imgUrl = req.file.cloudStoragePublicUrl;
+    }
+    var inputColor =  {"image":imgUrl};
+    Algorithmia.client("simHERP2fTXQrX3Ur+e4Joow8DF1")
+      .algo("coqnitics/colordetector/0.1.1") // timeout is optional
+      .pipe(inputColor)
+      .then(function(response) {
+        var res = response.get();
+        console.log("Color:",res);
+      });
 
-  if(req.file && req.file.cloudStoragePublicUrl) {
-    cloth.imgUrl = req.file.cloudStoragePublicUrl;
-  }
+    var inputClothes = {
+       "image": imgUrl,
+       "model":"large",
+       "tags_only": true
+    };
 
-	var d = new Date();
-	var id = d.getTime();
-	cloth.id = id;
-	clothes.push(cloth);
+    cloth[0].imgUrl = imgUrl;
+    cloth[0].name = "Loading...";
+    cloth[0].type = "Loading...";
+    cloth[0].color = color;
+    var id = genId();
+    cloth[0].id = id;
+    clothes.push(cloth[0]);
 
-	// save items to file here
-	save(req.user, clothes);
-	res.redirect('/wardrobe');
+    save(req.user, clothes);
+
+    function out (obj) {
+        console.log("From API:", obj)
+        obj.articles.forEach( (item, i) => {
+            console.log("item: ",item);
+            cloth[i] = item;
+            cloth[i].imgUrl = imgUrl;
+            cloth[i].name = item.article_name;
+            cloth[i].type = item.article_name;
+            cloth[i].color = color;
+            cloth[i].id = genId();
+
+        });
+
+        cloth.forEach((item, i) => {
+            console.log("Cloth ",i, ":", item);
+            if (i==0){
+                clothes[clothes.length - 1] = item;
+            }else{
+                clothes.push(item);
+                console.log("Clothes", i, clothes);
+                save(req.user, clothes);
+            }
+
+        });
+        //save(req.user, clothes);
+
+
+        //console.log("cloth:",cloth);
+    }
+
+    Algorithmia.client("simHERP2fTXQrX3Ur+e4Joow8DF1")
+      .algo("algorithmiahq/DeepFashion/1.3.0") // timeout is optional -> +"?timeout=3000"
+      .pipe(inputClothes)
+      .then(function(response) {
+        out(response.get());
+      });
+
+     res.redirect('/wardrobe');
+
 });
 
 app.get('/delete', async function(req,res) {
 	var q = url.parse(req.url, true).query;
 	var clothes = await read(req.user);
+
 	for(i=0;i<clothes.length;i++){
 		if (clothes[i].id == q.id){
 			clothes.splice(i,1);
+            console.log("After deletion:",clothes);
 			break;
 		}
 	}
@@ -240,12 +354,42 @@ app.post('/edit', images.multer.single('image'), images.uploadImage, async (req,
 	save(req.user, clothes);
 	res.redirect('/wardrobe');
 });
-app.get('/view', require('connect-ensure-login').ensureLoggedIn() , async function (req, res) {
 
-  const user = await read(req.user);
+app.post('/prefrences', async function(req, res) {
 
-	res.send(user);
+  var clothes = await read(req.user);
+  console.log(clothes);
+  var output = [];
+  var fndshirt = false;
+  var fndpants = false;
+  var form = new formidable.IncomingForm();
+  form.parse(req, function (err, fields, files) {
+     if (err) throw err;
+
+     var color = fields.color;
+
+     for(i=0; i< clothes.length ; i++){
+        if( clothes[i].color == color && output.length < 3) {
+            output.push(clothes[i]);
+        }
+     }
+
+     res.send(output)
+
+  });
 });
+
+app.get('/view', require('connect-ensure-login').ensureLoggedIn() , async function (req, res) {
+    console.log("request recieved");
+  const user = await read(req.user);
+    console.log(res.statusCode);
+    res.send(user);
+});
+
+
+
+
+
 
 app.use('/page', express.static(path.join(__dirname, 'public')));
 app.listen(process.env.PORT, () => console.log(`Example app listening on port ` + process.env.PORT + `!`));
