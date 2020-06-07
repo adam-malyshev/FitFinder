@@ -289,6 +289,13 @@ app.post('/add', images.multer.single('image'), images.uploadImage, async (req, 
 
     function out (obj) {
         //console.log("From API:", obj)
+        if(clothes.length == 1){
+            clothes = [];
+        }else{
+            clothes.splice(clothes.length-1 , 1);
+        }
+
+        console.log("Clothes:",clothes);
         obj.articles.forEach( (item, i) => {
             //console.log("item: ",item);
             cloth[i] = item;
@@ -301,7 +308,7 @@ app.post('/add', images.multer.single('image'), images.uploadImage, async (req, 
         });
 
         cloth.forEach((item, iterator) => {
-            clothes.splice(clothes.length-1 , 1);
+
             //crop images to bounding boxes
             //console.log("Before crop: ", item.imgUrl);
             images.crop(item, (res) =>{
@@ -340,8 +347,12 @@ app.post('/add', images.multer.single('image'), images.uploadImage, async (req, 
                     //
                     // }
                     // if (iterator != 0){
+                    if(!clothes){
+                        clothes[0]=item;
+                    }else{
+                        clothes.push(item);
+                    }
 
-                    clothes.push(item);
                     //console.log("Clothes", clothes);
                     save(req.user, clothes);
                         //console.log("Clothes", i, clothes);
