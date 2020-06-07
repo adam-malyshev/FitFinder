@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/page/stylesheets/style.css">
+</head>
+<body>
+    <div class="header">
+        <h2>fitfinder</h2>
+    </div>
+    <div class="topnav">
+        <a href="/wardrobe">Wardrobe</a>
+        <a href="/prefrences" class="active"> Prefrences </a>
+        <a href="/logout" class="account"> Log Out </a>
+    </div>
+
+    <div class="content">
+    <p>Enter your clothing prefrences</p>
+    <form action="/prefrences" method="post" enctype="multipart/form-data">
+        <input type="text" class="text" name="color" placeholder="Color">
+        <input type="button" class="button" onclick="submitPrefs(this.form)" value="Find Clothes">
+    </form>
+    </div>
+    <div id="result">
+    </div>
+
+ <script>
+
+    function genList (obj){
+        var html = "<ul style= 'list-style-type:none;' >";
+        for(i = 0 ; i < obj.length; i++){
+            html += "<li> <canvas id='"+String(obj.id)+"' width='100' height='100'></canvas>";
+        }
+        html += "</ul>";
+        return html;
+    }
+
+    function insertImage (obj) {
+        var canvas = document.getElementById(String(obj.id));
+        var context = canvas.getContext('2d');
+        var image = new Image();
+
+        image.onload = () => {
+            var sourcex = obj.bounding_box.x0;
+            var sourcey = obj.bounding_box.y0;
+            var sourcewidth = obj.bounding_box.x1 - obj.bounding_box.x0;
+            var sourceheight = obj.bounding_box.y1 - obj.bounding_box.y0;
+            var destwidth = sourcewidth;
+            var destheight = sourceheight;
+            var destx = canvas.width / 2 - destwidth / 2;
+            var desty = canvas.height / 2 - destheight / 2;
+            context.drawImage(image, sourcex, sourcey, sourcewidth, sourceheight, destx, desty, destwidth, destheight);
+        }
+        image.src = obj.imgUrl;
+    }
+
+    function submitPrefs(obj){
+        console.log(obj);
+        const xml = new XMLHttpRequest();
+        const fd = new FormData(obj);
+        xml.onreadystatechange = function () {
+            if(xml.readyState == 4){
+              data =  JSON.parse(xml.responseText);
+              if (!data.length){
+                  alert("Clothing not found. Choose another color.");
+              }
+              document.getElementById("result").innerHTML = genList(data);
+              data.forEach((item) => {
+                  insertImage(item);
+              });
+            }
+        }
+        xml.open('POST', '/prefrences', true);
+        xml.send(fd);
+        return false;
+    }
+
+ </script>
+</body>
+</htmL>

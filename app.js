@@ -18,13 +18,13 @@ const db = new Firestore({
   keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
 });
 
-const images = require('./public/javascripts/images');
+const images = require("./public/javascripts/images.js");
 
 var pending = false;
 // Set some defaults (required if your JSON file is empty)
 // db.defaults({ users:[{name:'adam', username:'adam', password:1234, id:1, data: [{"name": "a","type": "shirt","color": "Blue","image": "shirt.jpeg","id": "1581913227641"},{"name": "Jeans","type": "shirt","color": "Blue","image": "shirt.jpeg","id": "1581913980798"}]}] })
 //    .write()
-console.log("Image path: "+path.join(__dirname,'images'));
+//console.log("Image path: "+path.join(__dirname,'images'));
 let users = db.collection('users');
 
 // users.doc("xjEsI36jVTcK238fGI9g").set({
@@ -49,7 +49,7 @@ findById = function(id, cb) {
            cb(null, doc.data());
         }
      }).catch(err => {
-         console.log('Error getting user', err);
+         //console.log('Error getting user', err);
      });
   });
 }
@@ -133,8 +133,9 @@ async function read(user) {
 }
 
 function save(user, obj) {
-  console.log("data to be updated: ", obj);
+  //console.log("data to be updated: ", obj);
 	users.doc(user.id).update({data:obj});
+    console.log("Saved something");
 }
 
 async function update(id, user, obj) {
@@ -152,25 +153,26 @@ async function update(id, user, obj) {
 
 function genId () {
 
-    var length = 8;
-    var timestamp = +new Date;
+    id = Math.random().toString(36).substr(2, 9);
 
-    var _getRandomInt = function( min, max ) {
-        return Math.floor( Math.random() * ( max - min + 1 ) ) + min;
-    }
-
-    var ts = timestamp.toString();
-    var parts = ts.split( "" ).reverse();
-    var id = "";
-    for( var i = 0; i < length; ++i ) {
-        var index = _getRandomInt( 0, parts.length - 1 );
-        id += parts[index];
-    }
-
-     return id;
+    return id.toString();
 }
 
+function prefrences(data, color) {
+    var output =[];
+    var clothing = {
+        tops:["t-shirt","tank top", 'button down shirt', 'blouse', 'casual dress', 'formal dress', 'sweater dress', 'rompers', 'jumpsuit'],
+        bottoms:['jeans', 'leggings', 'pants casual','sweatpants', 'shorts', 'pants suit formal',],
+        shoes:[],
+        outerwear:[],
+        underwear:[],
+        accessories:[]
+    };
+    data.forEach((item, i) => {
+        if(item.color == color);
+    });
 
+}
 
 // Use application-level middleware for common functionality, including
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -204,12 +206,16 @@ app.get('/register', function(req, res){
 });
 
 app.get('/wardrobe', require('connect-ensure-login').ensureLoggedIn() , function(req, res){
+    //console.log(res.statusCode);
     const q = url.parse(req.url, true).query;
     if (q.manual == "true") {
         res.sendFile('./clothes.html', options, function(err){
             if (err) throw err;
         });
     }else {
+        //console.log(res.statusCode);
+        res.type('html');
+        res.setHeader('Location', '/wardrobe');
         res.sendFile('./autoclothes.html', options, function(err){
             if (err) throw err;
         });
@@ -220,6 +226,13 @@ app.get('/prefrences', require('connect-ensure-login').ensureLoggedIn(), (req,re
   res.sendFile('./prefrences.html', options, function(err){
   		if (err) throw err;
   });
+});
+
+app.get('/clear', require('connect-ensure-login').ensureLoggedIn(), async (req,res) => {
+    var clothes = await read(req.user);
+    clothes = [];
+    save(req.user, clothes);
+    res.redirect('/wardrobe');
 });
 
 app.get('/logout',
@@ -252,18 +265,12 @@ app.post('/add', images.multer.single('image'), images.uploadImage, async (req, 
 	var clothes = await read(req.user);
     var cloth = [{}];
     var imgUrl;
-    var color= req.body.color;
+
     if(req.file && req.file.cloudStoragePublicUrl) {
         imgUrl = req.file.cloudStoragePublicUrl;
     }
-    var inputColor =  {"image":imgUrl};
-    Algorithmia.client("simHERP2fTXQrX3Ur+e4Joow8DF1")
-      .algo("coqnitics/colordetector/0.1.1") // timeout is optional
-      .pipe(inputColor)
-      .then(function(response) {
-        var res = response.get();
-        console.log("Color:",res);
-      });
+
+
 
     var inputClothes = {
        "image": imgUrl,
@@ -274,66 +281,112 @@ app.post('/add', images.multer.single('image'), images.uploadImage, async (req, 
     cloth[0].imgUrl = imgUrl;
     cloth[0].name = "Loading...";
     cloth[0].type = "Loading...";
-    cloth[0].color = color;
+    cloth[0].color = {color:"Loading..."};
     var id = genId();
     cloth[0].id = id;
     clothes.push(cloth[0]);
-
     save(req.user, clothes);
 
     function out (obj) {
-        console.log("From API:", obj)
+        //console.log("From API:", obj)
         obj.articles.forEach( (item, i) => {
-            console.log("item: ",item);
+            //console.log("item: ",item);
             cloth[i] = item;
             cloth[i].imgUrl = imgUrl;
             cloth[i].name = item.article_name;
             cloth[i].type = item.article_name;
-            cloth[i].color = color;
+            cloth[i].color = {color:"Loading..."};
             cloth[i].id = genId();
 
         });
 
-        cloth.forEach((item, i) => {
-            console.log("Cloth ",i, ":", item);
-            if (i==0){
-                clothes[clothes.length - 1] = item;
-            }else{
-                clothes.push(item);
-                console.log("Clothes", i, clothes);
-                save(req.user, clothes);
-            }
+        cloth.forEach((item, iterator) => {
+            clothes.splice(clothes.length-1 , 1);
+            //crop images to bounding boxes
+            //console.log("Before crop: ", item.imgUrl);
+            images.crop(item, (res) =>{
+                item.imgUrl = res;
+                //console.log("After crop in call back: ", item.imgUrl);
+
+                //find color of each article
+                var inputColor =  {"image": item.imgUrl};
+                Algorithmia.client("simHERP2fTXQrX3Ur+e4Joow8DF1")
+                  .algo("coqnitics/colordetector/0.1.1") // timeout is optional
+                  .pipe(inputColor)
+                  .then(function(response) {
+                    var res = response.get();
+                    var color;
+                    var colorRatio = 0;
+                    //find main color
+                    res.forEach( (entity, i) => {
+
+                        if(entity.ratio > colorRatio){
+                            colorRatio = entity.ratio;
+                        }
+                        color = {color:entity.color_name , hex:entity.hex};
+                    });
+
+                    item.color = color;
+
+                    //save each item to the clothes array and then save it to database
+                    // if (iterator == 0){
+                    //     console.log("Length of clothes:", clothes.length);
+                    //     clothes[clothes.length-1] = item;
+                    //     // for(var i= 0; i < clothes.length; i++){
+                    //     //     if(clothes[i].id == item.id && clothes[i].name == "Loading..."){
+                    //     //         clothes[i] = item;
+                    //     //     }
+                    //     // }
+                    //
+                    // }
+                    // if (iterator != 0){
+
+                    clothes.push(item);
+                    //console.log("Clothes", clothes);
+                    save(req.user, clothes);
+                        //console.log("Clothes", i, clothes);
+                    // }
+                    //console.log("Last Clothing item:" , clothes[clothes.length - 1]);
+
+
+                  });
+
+
+            });
 
         });
-        //save(req.user, clothes);
-
-
-        //console.log("cloth:",cloth);
     }
 
     Algorithmia.client("simHERP2fTXQrX3Ur+e4Joow8DF1")
       .algo("algorithmiahq/DeepFashion/1.3.0") // timeout is optional -> +"?timeout=3000"
       .pipe(inputClothes)
-      .then(function(response) {
+      .then(async function(response) {
         out(response.get());
-      });
+        //console.log("Clothes:", clothes);
 
+      });
+     res.setHeader('Location', '/wardrobe');
      res.redirect('/wardrobe');
 
 });
 
 app.get('/delete', async function(req,res) {
 	var q = url.parse(req.url, true).query;
+    var deleteID = q.id.toString();
 	var clothes = await read(req.user);
 
-	for(i=0;i<clothes.length;i++){
-		if (clothes[i].id == q.id){
+	for(var i=0;i<clothes.length;i++){
+        console.log("q.id:", q.id);
+        console.log("clothes[i].id:", clothes[i].id);
+		if (clothes[i].id == deleteID){
 			clothes.splice(i,1);
-            console.log("After deletion:",clothes);
+            //console.log("After deletion:",clothes);
+            console.log("Successfully deleted:", q.id);
+        	save(req.user, clothes);
 			break;
 		}
 	}
-	save(req.user, clothes);
+
 	res.send(clothes);
 });
 
@@ -357,33 +410,36 @@ app.post('/edit', images.multer.single('image'), images.uploadImage, async (req,
 
 app.post('/prefrences', async function(req, res) {
 
-  var clothes = await read(req.user);
-  console.log(clothes);
-  var output = [];
-  var fndshirt = false;
-  var fndpants = false;
-  var form = new formidable.IncomingForm();
-  form.parse(req, function (err, fields, files) {
-     if (err) throw err;
+    var clothes = await read(req.user);
+    //console.log(clothes);
+    var output = [];
+    var fndshirt = false;
+    var fndpants = false;
+    var form = new formidable.IncomingForm();
+    form.parse(req, function (err, fields, files) {
+        if (err) throw err;
 
-     var color = fields.color;
+        var color = fields.color;
 
-     for(i=0; i< clothes.length ; i++){
-        if( clothes[i].color == color && output.length < 3) {
-            output.push(clothes[i]);
+        for(i=0; i< clothes.length ; i++){
+            if( clothes[i].color == color && output.length < 3) {
+                output.push(clothes[i]);
+            }
         }
-     }
 
-     res.send(output)
+    res.send(output)
 
-  });
+    });
 });
 
 app.get('/view', require('connect-ensure-login').ensureLoggedIn() , async function (req, res) {
-    console.log("request recieved");
-  const user = await read(req.user);
-    console.log(res.statusCode);
+
+    //console.log("request recieved");
+    const user = await read(req.user);
+    res.type('json');
     res.send(user);
+    //console.log(res.statusCode);
+
 });
 
 
@@ -392,4 +448,5 @@ app.get('/view', require('connect-ensure-login').ensureLoggedIn() , async functi
 
 
 app.use('/page', express.static(path.join(__dirname, 'public')));
-app.listen(process.env.PORT, () => console.log(`Example app listening on port ` + process.env.PORT + `!`));
+
+module.exports = app;
