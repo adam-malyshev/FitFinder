@@ -1,7 +1,7 @@
 const {Storage} = require('@google-cloud/storage');
 const storage = new Storage({keyFilename:process.env.GOOGLE_APPLICATION_CREDENTIALS});
 const bucket = storage.bucket(process.env.BUCKET);
-const Multer = require('Multer');
+const Multer = require('multer');
 const sharp = require('sharp');
 const path = require('path');
 
