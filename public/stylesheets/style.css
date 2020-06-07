@@ -134,7 +134,7 @@ body{
 
 .table img{
   float:left;
-  object-fit:cover;
+  object-fit:contain;
   width:100px;
   height:100px;
 
