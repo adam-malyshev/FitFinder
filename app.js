@@ -329,12 +329,13 @@ app.post('/add', images.multer.single('image'), images.uploadImage, async (req, 
 
                         if(entity.ratio > colorRatio){
                             colorRatio = entity.ratio;
+                            color = entity;
                         }
-                        color = {color:entity.color_name , hex:entity.hex};
+
                     });
-
+                    color = {color:color.color_name , hex:color.hex};
                     item.color = color;
-
+                    console.log("Color:", color);
                     //save each item to the clothes array and then save it to database
                     // if (iterator == 0){
                     //     console.log("Length of clothes:", clothes.length);

@@ -46,6 +46,7 @@ async function crop(obj, cb){
     console.log("Name of the orig file: " , name);
     var fileparse = imageurl.split('.');
     var fileFormat = fileparse[fileparse.length - 1];
+    fileFormat = fileFormat.toLowerCase();
     console.log("File Format:" , fileFormat);
     var date = new Date();
     var newname = obj.id + '_' + date.getTime() + '.' + fileFormat;
