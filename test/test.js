@@ -13,7 +13,7 @@ before(function(done){
     .post('/login')
     .set('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9')
     .set('Content-Type', 'application/x-www-form-urlencoded')
-    .send('username=adam&password=1234')
+    .send('username=dev&password=1234')
     .end(function(err, response){
       expect(response.statusCode).to.equal(302);
       expect('Location', '/wardrobe');
@@ -81,88 +81,131 @@ authenticatedUser.get('/view')
 
 
 
-describe('POST /add', function(done){
-    this.timeout(100000);
-    var oldClothes;
-    it('gets clothes', function(done){
-        authenticatedUser.get('/view')
+// describe('POST /add', function(done){
+//     this.timeout(150000);
+//     var oldClothes;
+//     it('gets clothes', function(done){
+//         authenticatedUser.get('/view')
+//         .set('Accept', 'application/json')
+//         .expect('Content-Type', /json/)
+//         .expect(200)
+//         .end((err, res)=>{
+//             if(err) return done(err);
+//             oldClothes = res.body;
+//             done();
+//         });
+//
+//     });
+//     it('post clothing through /add ',
+//     function(done){
+//         authenticatedUser.post('/add')
+//         .attach('image', '/Users/adammalyshev/Documents/outfit1.JPEG')
+//         .expect('Location', '/wardrobe')
+//         .expect(302, done);
+//     });
+//     it('posted new clothing', function(done){
+//     authenticatedUser.get('/view')
+//         .set('Accept', 'application/json')
+//         .expect('Content-Type', /json/)
+//         .expect(200)
+//         .then((response) => {
+//             setTimeout(function(){
+//                 var newClothes= response.body;
+//                 expect(newClothes.length > oldClothes.length).to.be.true;
+//                 return done();
+//             }, 100000);
+//         })
+//     });
+// });
+
+// describe('GET /delete', function(done){
+//     this.timeout(4000);
+//     var oldclothes = [{id:0}];
+//     var lastoldclothes;
+//     var id;
+//     var url;
+//     it('accesses clothes', function(done){
+// authenticatedUser.get('/view')
+//             .expect('Content-Type', /json/)
+//             .expect(200)
+//             .end((err, res) => {
+//                 if (err) return done(err);
+//                 oldclothes = res.body;
+//                 console.log("CLOTHES:",oldclothes);
+//                 lastoldclothes = oldclothes.length - 1;
+//                 id = oldclothes[lastoldclothes].id;
+//                 url = '/delete?id=' + id.toString();
+//                 done();
+//             });
+//     });
+//     setTimeout(function(){
+//         it('deletes last item', function(done){
+//     authenticatedUser.get(url)
+//                 .expect('Content-Type', /json/)
+//                 .expect(200)
+//                 .end((err, res) => {
+//                     setTimeout(function(){
+//                         if (err) return done(err);
+//                         console.log("INCOMING:", res.body);
+//                         expect(res.body.length == lastoldclothes).to.be.true;
+//                         done();
+//                     }, 1000);
+//                 });
+//         });
+//     }, 2000);
+//
+//
+//
+// });
+
+
+
+describe('GET /fitfinder', function(done){
+    it('finds fit', function(done){
+authenticatedUser.get('/fitfinder')
+        .expect('Content-Type', /json/)
+        .expect(200,done);
+    });
+
+});
+
+describe('GET /fitfinderfeedback', function(done){
+
+    var url = [];
+    it('gets founded fit', function(done){
+        authenticatedUser.get('/fitfinder')
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(200)
         .end((err, res)=>{
             if(err) return done(err);
-            oldClothes = res.body;
+            url = '/fitfinder?clothes=';
+            res.body.forEach((item, i) => {
+                url += item.id.toString();
+                //if(i < res.body.length - 1){
+                    url += ',';
+                //}
+            });
+            url += '&status=true';
+            console.log("URL:", url);
             done();
         });
 
     });
-    it('post clothing through /add ',
-    function(done){
-        authenticatedUser.post('/add')
-        .attach('image', '/Users/adammalyshev/Downloads/IMG_6041.JPG')
-        .expect('Location', '/wardrobe')
-        .expect(302, done);
-    });
-    it('posted new clothing', function(done){
-    authenticatedUser.get('/view')
-        .set('Accept', 'application/json')
-        .expect('Content-Type', /json/)
-        .expect(200)
-        .then((response) => {
-            setTimeout(function(){
-                var newClothes= response.body;
-                expect(newClothes.length > oldClothes.length).to.be.true;
-                return done();
-            }, 60000);
-        })
-    });
-});
-
-describe('GET /delete', function(done){
-    this.timeout(4000);
-    var oldclothes = [{id:0}];
-    var lastoldclothes;
-    var id;
-    var url;
-    it('accesses clothes', function(done){
-authenticatedUser.get('/view')
-            .expect('Content-Type', /json/)
-            .expect(200)
-            .end((err, res) => {
-                if (err) return done(err);
-                oldclothes = res.body;
-                console.log("CLOTHES:",oldclothes);
-                lastoldclothes = oldclothes.length - 1;
-                id = oldclothes[lastoldclothes].id;
-                url = '/delete?id=' + id.toString();
-                done();
-            });
-    });
-    setTimeout(function(){
-        it('deletes last item', function(done){
-    authenticatedUser.get(url)
-                .expect('Content-Type', /json/)
-                .expect(200)
-                .end((err, res) => {
-                    setTimeout(function(){
-                        if (err) return done(err);
-                        console.log("INCOMING:", res.body);
-                        expect(res.body.length == lastoldclothes).to.be.true;
-                        done();
-                    }, 1000);
-                });
-        });
-    }, 2000);
-
-
-
-});
-
-describe('GET /clear', function(done){
-    it('clears all clothes', function(done){
-authenticatedUser.get('/clear')
-            .expect('Location', '/wardrobe')
-            .expect(302,done);
+    it('responds to fitfinder clothes', function(done){
+authenticatedUser.get(url)
+        .expect('Location', '/fitfinder')
+        .expect(200,done);
     });
 
 });
+
+
+// describe('GET /clear', function(done){
+//     it('clears all clothes', function(done){
+// authenticatedUser.get('/clear')
+//             .expect('Location', '/wardrobe')
+//             .expect(302,done);
+//     });
+//
+// });

@@ -45,11 +45,12 @@ async function crop(obj, cb){
     var name = nameparse[nameparse.length - 1 ];
     console.log("Name of the orig file: " , name);
     var fileparse = imageurl.split('.');
-    var fileFormat = fileparse[fileparse.length - 1];
-    fileFormat = fileFormat.toLowerCase();
-    console.log("File Format:" , fileFormat);
+    //var fileFormat = fileparse[fileparse.length - 1];
+    //fileFormat = fileFormat.toLowerCase();
+    //console.log("File Format:" , fileFormat);
     var date = new Date();
-    var newname = obj.id + '_' + date.getTime() + '.' + fileFormat;
+    //var newname = obj.id + '_' + date.getTime() + '.' + fileFormat;
+    var newname = obj.id + '_' + date.getTime() + '.jpeg';
     console.log("Name of the proc file: ", newname);
 
     var readFile = bucket.file(name);
@@ -74,7 +75,7 @@ async function crop(obj, cb){
                 fit: sharp.fit.inside,
                 withoutEnlargement: true
             })
-            .toFormat(fileFormat);
+            .jpeg();
 
     //create Read Stream
     readFile.createReadStream()
