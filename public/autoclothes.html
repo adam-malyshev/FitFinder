@@ -68,22 +68,18 @@ document.getElementById('imageUpload').addEventListener('change', filePreview, f
 
 	function addRow(obj){
         var id = String(obj.id);
-        var color = obj.color.color;
-        var arr = color.split("_");
-        var finalcolor = "";
-        arr.forEach((item,i) => {
-            if(i < color.length - 1){
-                finalcolor += item;
-                finalcolor += " ";
-            }else {
-                finalcolor += item;
-            }
-        });
+        var color;
+        if(obj.color == "Loading..."){
+            color = {red:255, green:255, blue:255};
+        }else{
+            color = obj.color[0].color;
+        }
+
 		var out = "<tr>";
 		out += "<td><img src='"+obj.imgUrl+"' alt='" + obj.name + "' width='100' height='100'></td>";
 		out += "<td style='width:100%'>" + obj.name + "</td>";
 		out += "<td style='width:100%'>" + obj.type + "</td>";
-		out += "<td style='width:100%'>" + finalcolor + "</td>";
+		out += "<td style='width:100%'><div style='height:100px; background-color:rgb("+ color.red.toString() + "," + color.green.toString() + "," + color.blue.toString() + ");'></div></td>";
 		out += "<td style='width:30px'><button onclick='del(\""+ id +"\")'><i class='fas fa-trash-alt'></i> </button></td>";
 		out += "<td style='width:30px'><button onclick='edit(\""+ id +"\")'> <i class='fas fa-edit'></i></button></td>";
 		out += "</tr>";
