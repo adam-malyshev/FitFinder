@@ -97,7 +97,7 @@ async function crop(obj, cb){
             await writeFile.makePublic();
             out = getPublicUrl(newname);
             console.log("URL after cropping:", out);
-            cb(out);
+            cb(out, newname);
           });
 }
 

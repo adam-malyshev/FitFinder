@@ -81,42 +81,42 @@ authenticatedUser.get('/view')
 
 
 
-// describe('POST /add', function(done){
-//     this.timeout(150000);
-//     var oldClothes;
-//     it('gets clothes', function(done){
-//         authenticatedUser.get('/view')
-//         .set('Accept', 'application/json')
-//         .expect('Content-Type', /json/)
-//         .expect(200)
-//         .end((err, res)=>{
-//             if(err) return done(err);
-//             oldClothes = res.body;
-//             done();
-//         });
-//
-//     });
-//     it('post clothing through /add ',
-//     function(done){
-//         authenticatedUser.post('/add')
-//         .attach('image', '/Users/adammalyshev/Documents/outfit1.JPEG')
-//         .expect('Location', '/wardrobe')
-//         .expect(302, done);
-//     });
-//     it('posted new clothing', function(done){
-//     authenticatedUser.get('/view')
-//         .set('Accept', 'application/json')
-//         .expect('Content-Type', /json/)
-//         .expect(200)
-//         .then((response) => {
-//             setTimeout(function(){
-//                 var newClothes= response.body;
-//                 expect(newClothes.length > oldClothes.length).to.be.true;
-//                 return done();
-//             }, 100000);
-//         })
-//     });
-// });
+describe('POST /add', function(done){
+    this.timeout(150000);
+    var oldClothes;
+    it('gets clothes', function(done){
+        authenticatedUser.get('/view')
+        .set('Accept', 'application/json')
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .end((err, res)=>{
+            if(err) return done(err);
+            oldClothes = res.body;
+            done();
+        });
+
+    });
+    it('post clothing through /add ',
+    function(done){
+        authenticatedUser.post('/add')
+        .attach('image', '/Users/adammalyshev/Documents/shirt.jpeg')
+        .expect('Location', '/wardrobe')
+        .expect(302, done);
+    });
+    it('posted new clothing', function(done){
+    authenticatedUser.get('/view')
+        .set('Accept', 'application/json')
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .then((response) => {
+            setTimeout(function(){
+                var newClothes= response.body;
+                expect(newClothes.length > oldClothes.length).to.be.true;
+                return done();
+            }, 100000);
+        })
+    });
+});
 
 // describe('GET /delete', function(done){
 //     this.timeout(4000);
@@ -160,45 +160,46 @@ authenticatedUser.get('/view')
 
 
 
-describe('GET /fitfinder', function(done){
-    it('finds fit', function(done){
-authenticatedUser.get('/fitfinder')
-        .expect('Content-Type', /json/)
-        .expect(200,done);
-    });
-
-});
-
-describe('GET /fitfinderfeedback', function(done){
-
-    var url = [];
-    it('gets founded fit', function(done){
-        authenticatedUser.get('/fitfinder')
-        .set('Accept', 'application/json')
-        .expect('Content-Type', /json/)
-        .expect(200)
-        .end((err, res)=>{
-            if(err) return done(err);
-            url = '/fitfinder?clothes=';
-            res.body.forEach((item, i) => {
-                url += item.id.toString();
-                //if(i < res.body.length - 1){
-                    url += ',';
-                //}
-            });
-            url += '&status=true';
-            console.log("URL:", url);
-            done();
-        });
-
-    });
-    it('responds to fitfinder clothes', function(done){
-authenticatedUser.get(url)
-        .expect('Location', '/fitfinder')
-        .expect(200,done);
-    });
-
-});
+// describe('GET /fitfinder', function(done){
+//     it('finds fit', function(done){
+// authenticatedUser.get('/fitfinder')
+//         .expect('Content-Type', /json/)
+//         .expect(200,done);
+//     });
+//
+// });
+//
+// describe('GET /fitfinderfeedback', function(done){
+//
+//     var url = [];
+//     it('gets founded fit', function(done){
+//         authenticatedUser.get('/fitfinder')
+//         .set('Accept', 'application/json')
+//         .expect('Content-Type', /json/)
+//         .expect(200)
+//         .end((err, res)=>{
+//             if(err) return done(err);
+//             url = '/fitfinderfeedback?clothes=';
+//             var clothes = res.body;
+//             clothes.forEach((item, i) => {
+//                 url += item.id.toString();
+//                 if(i < res.body.length - 1){
+//                     url += ',';
+//                 }
+//             });
+//             url += '&status=true';
+//             console.log("URL:", url);
+//             done();
+//         });
+//
+//     });
+//     it('responds to fitfinder clothes', function(done){
+// authenticatedUser.get(url)
+//         .expect('Location', '/fitfinder')
+//         .expect(302,done);
+//     });
+//
+// });
 
 
 // describe('GET /clear', function(done){

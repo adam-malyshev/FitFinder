@@ -20,6 +20,10 @@ const db = new Firestore({
 
 const images = require("./public/javascripts/images.js");
 
+const vision = require('@google-cloud/vision');
+  // Creates a client
+const client = new vision.ImageAnnotatorClient();
+
 var pending = false;
 // Set some defaults (required if your JSON file is empty)
 // db.defaults({ users:[{name:'adam', username:'adam', password:1234, id:1, data: [{"name": "a","type": "shirt","color": "Blue","image": "shirt.jpeg","id": "1581913227641"},{"name": "Jeans","type": "shirt","color": "Blue","image": "shirt.jpeg","id": "1581913980798"}]}] })
@@ -135,13 +139,14 @@ async function read(user) {
 async function readTrainingData(user) {
 	//get the user and return the data by searching with user id
   const doc = await users.doc(user.id).get();
-
   if (!doc.exists) {
       console.log("The user " + user.username + " has not been found");
   }
   if(!doc.data().training_data){
-      var traindata = [];
-      saveTrainingData(user,traindata);
+      var data = doc.data();
+      data.training_data = [];
+      users.doc(data.id).set(data);
+      return [];
   }
   return doc.data().training_data;
 }
@@ -283,7 +288,7 @@ app.post('/add', images.multer.single('image'), images.uploadImage, async (req, 
     cloth[0].imgUrl = imgUrl;
     cloth[0].name = "Loading...";
     cloth[0].type = "Loading...";
-    cloth[0].color = {color:"Loading..."};
+    cloth[0].color = "Loading...";
     var id = genId();
     cloth[0].id = id;
     clothes.push(cloth[0]);
@@ -304,7 +309,7 @@ app.post('/add', images.multer.single('image'), images.uploadImage, async (req, 
             cloth[i].imgUrl = imgUrl;
             cloth[i].name = item.article_name;
             cloth[i].type = item.article_name;
-            cloth[i].color = {color:"Loading..."};
+            cloth[i].color = "Loading...";
             cloth[i].id = genId();
 
         });
@@ -313,57 +318,88 @@ app.post('/add', images.multer.single('image'), images.uploadImage, async (req, 
 
             //crop images to bounding boxes
             //console.log("Before crop: ", item.imgUrl);
-            images.crop(item, (res) =>{
+            images.crop(item, async (res, filename) => {
                 item.imgUrl = res;
-                //console.log("After crop in call back: ", item.imgUrl);
 
                 //find color of each article
-                var inputColor =  {"image": item.imgUrl};
-                Algorithmia.client("simHERP2fTXQrX3Ur+e4Joow8DF1")
-                  .algo("coqnitics/colordetector/0.1.1") // timeout is optional
-                  .pipe(inputColor)
-                  .then(function(response) {
-                    var res = response.get();
-                    var color;
-                    var colorRatio = 0;
-                    //find main color
-                    res.forEach( (entity, i) => {
+                async function getColor() {
+                    const [result] = await client.imageProperties(
+                        `gs://${process.env.BUCKET}/${filename}`
+                    );
 
-                        if(entity.ratio > colorRatio){
-                            colorRatio = entity.ratio;
-                            color = entity;
-                        }
+                    var colors = result.imagePropertiesAnnotation.dominantColors.colors;
+                    var sortedColors = [];
 
-                    });
-                    color = {color:color.color_name , hex:color.hex};
-                    item.color = color;
-                    console.log("Color:", color);
-                    //save each item to the clothes array and then save it to database
-                    // if (iterator == 0){
-                    //     console.log("Length of clothes:", clothes.length);
-                    //     clothes[clothes.length-1] = item;
-                    //     // for(var i= 0; i < clothes.length; i++){
-                    //     //     if(clothes[i].id == item.id && clothes[i].name == "Loading..."){
-                    //     //         clothes[i] = item;
-                    //     //     }
-                    //     // }
-                    //
-                    // }
-                    // if (iterator != 0){
-                    if(!clothes){
-                        clothes[0]=item;
-                    }else{
-                        clothes.push(item);
+                    for (var i = 0; i<colors.length ; i++){
+                        var majorColor = 0;
+                        var count = 0;
+                        colors.forEach( (color, index) => {
+                                 if(color.pixelFraction > majorColor){
+                                     majorColor = color.pixelFraction;
+                                     sortedColors[i] = colors[index];
+                                     count = index;
+                                 }
+                        });
+                        colors.splice(count, 1);
                     }
+                    sortedColors.forEach(color => console.log(color));
+                    return sortedColors;
+                };
+                item.color =  await getColor();
+                console.log("Color:", item.color);
 
-                    //console.log("Clothes", clothes);
-                    save(req.user, clothes);
-                        //console.log("Clothes", i, clothes);
-                    // }
-                    //console.log("Last Clothing item:" , clothes[clothes.length - 1]);
+                if(!clothes){
+                    clothes[0]=item;
+                }else{
+                    clothes.push(item);
+                }
+
+                //console.log("Clothes", clothes);
+                save(req.user, clothes);
+                //console.log("After crop in call back: ", item.imgUrl);
 
 
-                  });
+
+
+                // var inputColor =  {"image": item.imgUrl};
+                // Algorithmia.client("simHERP2fTXQrX3Ur+e4Joow8DF1")
+                //   .algo("coqnitics/colordetector/0.1.1") // timeout is optional
+                //   .pipe(inputColor)
+                //   .then(function(response) {
+                //     var res = response.get();
+                //     var color;
+                //     var colorRatio = 0;
+                //     //find main color
+                //     res.forEach( (entity, i) => {
+                //
+                //         if(entity.ratio > colorRatio){
+                //             colorRatio = entity.ratio;
+                //             color = entity;
+                //         }
+                //
+                //     });
+                //     color = {color:color.color_name , hex:color.hex};
+                //     item.color = color;
+                //     console.log("Color:", color);
+                //     //save each item to the clothes array and then save it to database
+                //     // if (iterator == 0){
+                //     //     console.log("Length of clothes:", clothes.length);
+                //     //     clothes[clothes.length-1] = item;
+                //     //     // for(var i= 0; i < clothes.length; i++){
+                //     //     //     if(clothes[i].id == item.id && clothes[i].name == "Loading..."){
+                //     //     //         clothes[i] = item;
+                //     //     //     }
+                //     //     // }
+                //     //
+                //     // }
+                //     // if (iterator != 0){
+                //
+                //         //console.log("Clothes", i, clothes);
+                //     // }
+                //     //console.log("Last Clothing item:" , clothes[clothes.length - 1]);
+                //
+                //
+                //   });
 
 
             });
@@ -532,14 +568,27 @@ app.get('/fitfinderfeedback', require('connect-ensure-login').ensureLoggedIn(), 
     var q = url.parse(req.url, true).query;
     var clothes = q.clothes;
     var status = q.status;
+    const user = await read(req.user);
     var traindata = await readTrainingData(req.user);
-    var fitfinderData = {};
+    var fitfinderData = {
+        clothes:[],
+        status:false
+    };
     clothes = clothes.split(',');
     status= eval(status);
     console.log(clothes);
     console.log(status);
-    fitfinderData.clothes = clothes;
+    clothes.forEach((cloth) => {
+        user.forEach((item) => {
+            console.log(item.id);
+            console.log(cloth);
+            if(item.id == cloth){
+                fitfinderData.clothes.push(item);
+            }
+        });
+    });
     fitfinderData.status = status;
+    console.log(fitfinderData);
     traindata.push(fitfinderData);
     saveTrainingData(req.user, traindata);
     res.setHeader('Location', '/fitfinder');
