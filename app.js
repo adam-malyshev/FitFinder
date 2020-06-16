@@ -271,152 +271,112 @@ app.post('/register', function(req, res){
 app.post('/add', images.multer.single('image'), images.uploadImage, async (req, res) => {
 	var clothes = await read(req.user);
     var cloth = [{}];
-    var imgUrl;
+    var url;
 
     if(req.file && req.file.cloudStoragePublicUrl) {
-        imgUrl = req.file.cloudStoragePublicUrl;
+        url = req.file.cloudStoragePublicUrl;
     }
 
 
+    console.log("Old Url:", url);
+    images.reSize(url, imgUrl => {
+        // var imgUrl = imgUrl;
+        console.log("New Url:", imgUrl);
+        var inputClothes = {
+           "image": imgUrl,
+           "model":"large",
+           "tags_only": true
+        };
 
-    var inputClothes = {
-       "image": imgUrl,
-       "model":"large",
-       "tags_only": true
-    };
+        cloth[0].imgUrl = imgUrl;
+        cloth[0].name = "Loading...";
+        cloth[0].type = "Loading...";
+        cloth[0].color = "Loading...";
+        var id = genId();
+        cloth[0].id = id;
+        clothes.push(cloth[0]);
+        save(req.user, clothes);
 
-    cloth[0].imgUrl = imgUrl;
-    cloth[0].name = "Loading...";
-    cloth[0].type = "Loading...";
-    cloth[0].color = "Loading...";
-    var id = genId();
-    cloth[0].id = id;
-    clothes.push(cloth[0]);
-    save(req.user, clothes);
+        function out (obj) {
+            //console.log("From API:", obj)
+            if(clothes.length == 1){
+                clothes = [];
+            }else{
+                clothes.splice(clothes.length-1 , 1);
+            }
 
-    function out (obj) {
-        //console.log("From API:", obj)
-        if(clothes.length == 1){
-            clothes = [];
-        }else{
-            clothes.splice(clothes.length-1 , 1);
-        }
-
-        console.log("Clothes:",clothes);
-        obj.articles.forEach( (item, i) => {
-            //console.log("item: ",item);
-            cloth[i] = item;
-            cloth[i].imgUrl = imgUrl;
-            cloth[i].name = item.article_name;
-            cloth[i].type = item.article_name;
-            cloth[i].color = "Loading...";
-            cloth[i].id = genId();
-
-        });
-
-        cloth.forEach((item, iterator) => {
-
-            //crop images to bounding boxes
-            //console.log("Before crop: ", item.imgUrl);
-            images.crop(item, async (res, filename) => {
-                item.imgUrl = res;
-
-                //find color of each article
-                async function getColor() {
-                    const [result] = await client.imageProperties(
-                        `gs://${process.env.BUCKET}/${filename}`
-                    );
-
-                    var colors = result.imagePropertiesAnnotation.dominantColors.colors;
-                    var sortedColors = [];
-
-                    for (var i = 0; i<colors.length ; i++){
-                        var majorColor = 0;
-                        var count = 0;
-                        colors.forEach( (color, index) => {
-                                 if(color.pixelFraction > majorColor){
-                                     majorColor = color.pixelFraction;
-                                     sortedColors[i] = colors[index];
-                                     count = index;
-                                 }
-                        });
-                        colors.splice(count, 1);
-                    }
-                    sortedColors.forEach(color => console.log(color));
-                    return sortedColors;
-                };
-                item.color =  await getColor();
-                console.log("Color:", item.color);
-
-                if(!clothes){
-                    clothes[0]=item;
-                }else{
-                    clothes.push(item);
-                }
-
-                //console.log("Clothes", clothes);
-                save(req.user, clothes);
-                //console.log("After crop in call back: ", item.imgUrl);
-
-
-
-
-                // var inputColor =  {"image": item.imgUrl};
-                // Algorithmia.client("simHERP2fTXQrX3Ur+e4Joow8DF1")
-                //   .algo("coqnitics/colordetector/0.1.1") // timeout is optional
-                //   .pipe(inputColor)
-                //   .then(function(response) {
-                //     var res = response.get();
-                //     var color;
-                //     var colorRatio = 0;
-                //     //find main color
-                //     res.forEach( (entity, i) => {
-                //
-                //         if(entity.ratio > colorRatio){
-                //             colorRatio = entity.ratio;
-                //             color = entity;
-                //         }
-                //
-                //     });
-                //     color = {color:color.color_name , hex:color.hex};
-                //     item.color = color;
-                //     console.log("Color:", color);
-                //     //save each item to the clothes array and then save it to database
-                //     // if (iterator == 0){
-                //     //     console.log("Length of clothes:", clothes.length);
-                //     //     clothes[clothes.length-1] = item;
-                //     //     // for(var i= 0; i < clothes.length; i++){
-                //     //     //     if(clothes[i].id == item.id && clothes[i].name == "Loading..."){
-                //     //     //         clothes[i] = item;
-                //     //     //     }
-                //     //     // }
-                //     //
-                //     // }
-                //     // if (iterator != 0){
-                //
-                //         //console.log("Clothes", i, clothes);
-                //     // }
-                //     //console.log("Last Clothing item:" , clothes[clothes.length - 1]);
-                //
-                //
-                //   });
-
+            console.log("Clothes:",clothes);
+            obj.articles.forEach( (item, i) => {
+                //console.log("item: ",item);
+                cloth[i] = item;
+                cloth[i].imgUrl = imgUrl;
+                cloth[i].name = item.article_name;
+                cloth[i].type = item.article_name;
+                cloth[i].color = "Loading...";
+                cloth[i].id = genId();
 
             });
 
-        });
-    }
+            cloth.forEach((item, iterator) => {
 
-    Algorithmia.client("simHERP2fTXQrX3Ur+e4Joow8DF1")
-      .algo("algorithmiahq/DeepFashion/1.3.0") // timeout is optional -> +"?timeout=3000"
-      .pipe(inputClothes)
-      .then(async function(response) {
-        out(response.get());
-        //console.log("Clothes:", clothes);
+                //crop images to bounding boxes
+                //console.log("Before crop: ", item.imgUrl);
+                images.crop(item, async (res, filename) => {
+                    item.imgUrl = res;
 
-      });
-     res.setHeader('Location', '/wardrobe');
-     res.redirect('/wardrobe');
+                    //find color of each article
+                    async function getColor() {
+                        const [result] = await client.imageProperties(
+                            `gs://${process.env.BUCKET}/${filename}`
+                        );
+
+                        var colors = result.imagePropertiesAnnotation.dominantColors.colors;
+                        var sortedColors = [];
+
+                        for (var i = 0; i<colors.length ; i++){
+                            var majorColor = 0;
+                            var count = 0;
+                            colors.forEach( (color, index) => {
+                                     if(color.pixelFraction > majorColor){
+                                         majorColor = color.pixelFraction;
+                                         sortedColors[i] = colors[index];
+                                         count = index;
+                                     }
+                            });
+                            colors.splice(count, 1);
+                        }
+                        //sortedColors.forEach(color => console.log(color));
+                        return sortedColors;
+                    };
+                    item.color =  await getColor();
+                    console.log("Color:", item.color);
+
+                    if(!clothes){
+                        clothes[0]=item;
+                    }else{
+                        clothes.push(item);
+                    }
+
+                    //console.log("Clothes", clothes);
+                    save(req.user, clothes);
+                    //console.log("After crop in call back: ", item.imgUrl);
+                });
+
+            });
+        }
+        Algorithmia.client("simHERP2fTXQrX3Ur+e4Joow8DF1")
+          .algo("algorithmiahq/DeepFashion/1.3.0") // timeout is optional -> +"?timeout=3000"
+          .pipe(inputClothes)
+          .then(async function(response) {
+            out(response.get());
+            //console.log("Clothes:", clothes);
+
+          });
+         res.setHeader('Location', '/wardrobe');
+         res.redirect('/wardrobe');
+
+    });
+
 
 });
 

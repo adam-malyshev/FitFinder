@@ -54,7 +54,7 @@
                 reader = new FileReader();
                 reader.onload = (function (tFile) {
                     return function (evt) {
-                        document.getElementById('img').innerHTML = '<img style="width:100px; height:100px;" src="' + evt.target.result + '" />';
+                        document.getElementById('img').innerHTML = '<img style="width:100px; height:100px; object-fit:contain" src="' + evt.target.result + '" />';
                     };
                 }(file));
                 reader.readAsDataURL(file);
@@ -63,8 +63,9 @@
             alert('The File APIs are not fully supported in this browser.');
         }
     }
-document.getElementById('imageUpload').addEventListener('change', filePreview, false);
 
+
+    document.getElementById('imageUpload').addEventListener('change', filePreview, false);
 
 	function addRow(obj){
         var id = String(obj.id);

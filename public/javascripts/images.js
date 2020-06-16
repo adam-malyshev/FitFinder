@@ -62,12 +62,10 @@ async function crop(obj, cb){
     var sheight = obj.bounding_box.y1 - obj.bounding_box.y0;
     var out;
 
-    // var dx = canvas.width / 2 - destwidth / 2;
-    // var dy = canvas.height / 2 - destheight / 2;
-
     //crop image to bounding box using sharp
 
-
+    console.log("Bounding width:", swidth);
+    console.log("Bounding height:", sheight);
     const cropImage =
         sharp()
             .extract({left: sx, top: sy, width: swidth, height: sheight})
@@ -101,6 +99,45 @@ async function crop(obj, cb){
           });
 }
 
+async function reSize(url, cb){
+
+    var imageurl = url;
+    var nameparse = imageurl.split('/');
+    var name = nameparse[nameparse.length - 1 ];
+    var fileparse = name.split('.');
+    var newname = fileparse[fileparse.length - 2] + ".jpeg";
+    var readFile = bucket.file(name);
+    var writeFile =  bucket.file(newname);
+
+    const resizeImage =
+        sharp()
+            .resize(800, 800, {
+                fit: sharp.fit.inside,
+                withoutEnlargement: true
+            })
+            .jpeg();
+
+    readFile.createReadStream()
+        .on('error', function(err) {})
+        .on('response', function(response) {
+            // Server connected and responded with the specified status and headers.
+            console.log("Connected");
+        })
+        .on('end', function() {
+            // The file is fully downloaded.
+            console.log("File read");
+        })
+        .pipe(resizeImage)
+        .pipe(writeFile.createWriteStream())
+          .on('error', function(err) {})
+          .on('finish', async function() {
+            // The file upload is complete.
+            console.log("File uploaded");
+            await writeFile.makePublic();
+            out = getPublicUrl(newname);
+            cb(out);
+          });
+}
 const multer = Multer({
   storage: Multer.MemoryStorage,
   limits: {
@@ -113,5 +150,6 @@ module.exports = {
   getPublicUrl,
   uploadImage,
   crop,
+  reSize,
   multer
 }
