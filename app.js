@@ -400,17 +400,15 @@ app.get('/delete', async function(req,res) {
 	res.send(clothes);
 });
 
-app.post('/edit', images.multer.single('image'), images.uploadImage, async (req, res) => {
-	var clothes = await read(req.user);
-  var cloth = req.body;
-
-  if(req.file && req.file.cloudStoragePublicUrl) {
-    cloth.imgUrl = req.file.cloudStoragePublicUrl;
-  }
-
+app.post('/edit', async (req, res) => {
+    var clothes = await read(req.user);
+    var cloth = req.body;
+    console.log(cloth);
+    var q = url.parse(req.url, true).query;
+    var id = q.id;
 	for(i=0;i<clothes.length;i++){
-		if(clothes[i].id == cloth.id){
-			clothes[i] = cloth;
+		if(clothes[i].id == id){
+			clothes[i].name = cloth.name;
 		}
 	}
 
@@ -452,8 +450,15 @@ app.get('/view', require('connect-ensure-login').ensureLoggedIn() , async functi
 
 });
 
+app.get('/fitfinder', require('connect-ensure-login').ensureLoggedIn() , function (req, res) {
+    res.type('html');
+    res.setHeader('Location', '/fitfinder');
+    res.sendFile('./fitfinder.html', options, function(err){
+        if (err) throw err;
+    });
+});
 
-app.get('/fitfinder', require('connect-ensure-login').ensureLoggedIn(), async (req,res) => {
+app.get('/viewfitfinder', require('connect-ensure-login').ensureLoggedIn(), async (req,res) => {
     function fitfinder(data) {
         var output = [];
         var clothingTypes = {
@@ -555,6 +560,11 @@ app.get('/fitfinderfeedback', require('connect-ensure-login').ensureLoggedIn(), 
     res.redirect('/fitfinder');
 });
 
+app.get('/traindata', async (req,res) => {
+    var user = {id:"DAjqHo6WZ07vrFC7syYr"};
+    var out = await readTrainingData(user);
+    res.send(out);
+});
 
 
 

@@ -19,6 +19,7 @@ body{
   background-color: #333;
   border:hidden;
   border-radius:4px;
+  position:sticky;
 }
 .topnav a {
   float: left;
