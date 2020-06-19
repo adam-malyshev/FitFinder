@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/page/stylesheets/style.css">
+</head>
+<body>
+    <div class="header">
+        <h2>fitfinder</h2>
+    </div>
+    <div class="topnav">
+        <a href="/wardrobe">Wardrobe</a>
+        <a href="/fitfinder" class="active"> FitFinder</a>
+        <a href="/logout" class="account"> Log Out </a>
+    </div>
+    <div id="clothes" style="text-align:center; margin-left: auto; margin-right:auto;"></div>
+    <div id="feedback" style=" position:absolute; bottom:5%; left:10%; right:10%; width:80%;"> </div>
+    <div>
+        <a href="https://icons8.com/icon/VFaz7MkjAiu0/checkmark" style="font-size:5px; float:right;">Checkmark icon by Icons8</a>
+        <a href="https://icons8.com/icon/fYgQxDaH069W/cancel" style="font-size:5px; float:right;">Cancel icon by Icons8</a>
+    </div>
+
+ <script>
+
+    function genList (obj){
+        var html = "<ul style= 'list-style-type:none;' >";
+        obj.forEach((item, i) => {
+            if(!item){
+                alert("Sorry can't get an outfit!");
+            }
+            html += "<li> <canvas id='"+i+"' width='300' height='300'> </canvas> </li>";
+        });
+        html += "</ul>";
+        return html;
+    }
+    function drawImage(obj) {
+        obj.forEach((item, i) => {
+            var canvas = document.getElementById(i.toString());
+            var context = canvas.getContext('2d');
+            var image = new Image();
+
+            image.onload = function () {
+                var width = image.width;
+                var height = image.height;
+                height = (height/width) * 150;
+                width = 150;
+                var x = 75;
+                var y = (300 - height)/2;
+                context.drawImage(image, x, y, width, height);
+            };
+            image.src = item.imgUrl;
+        });
+
+
+    }
+    function feedback(obj) {
+        var url = "/fitfinderfeedback?clothes=";
+        var html;
+        obj.forEach((item, i) => {
+            url += item.id.toString();
+            if(i != obj.length - 1) {
+                url += ",";
+            }
+        });
+        var falseurl = url + "&status=false";
+        var trueurl = url + "&status=true";
+
+        html = "<a href='" + falseurl+ "' style='float:left;'><img src='https://img.icons8.com/fluent/48/000000/cancel.png'/></a>"
+        html += "<a href='"+ trueurl+"' style='float:right;'><img src='https://img.icons8.com/fluent/48/000000/checkmark.png'/></a>"
+        document.getElementById('feedback').innerHTML = html;
+    }
+
+
+    function fitfinder(){
+        const xml = new XMLHttpRequest();
+        xml.onreadystatechange = function () {
+            if(xml.readyState == 4){
+              data = JSON.parse(xml.responseText);
+              document.getElementById("clothes").innerHTML = genList(data);
+              drawImage(data);
+              feedback(data);
+            }
+        }
+        xml.open('GET', '/viewfitfinder', true);
+        xml.send();
+    }
+    fitfinder();
+ </script>
+</body>
+</htmL>

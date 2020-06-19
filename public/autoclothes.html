@@ -11,7 +11,7 @@
 </div>
 <div class="topnav">
   <a href="/wardrobe" class="active">Wardrobe</a>
-  <!--<a href="/prefrences"> Prefrences </a>-->
+  <a href="/fitfinder"> FitFinder</a>
   <a href="/logout" class="account"> Log Out </a>
 </div>
 
@@ -109,8 +109,8 @@
 
 	function edit(id) {
 		console.log(id);
-		var x = "<a href='/wardrobe' style='float:right; width:10px; height:10px;' ><i class='far fa-window-close'></i></a><p>Edit Clothes:</p><form action='/add' method='post' id='frm1' enctype='multipart/form-data'><label for='image'>Image:</label><div class='image'><div id='img'></div><input type='file' name='image' required id='imageUpload'></div><input class='button' type='submit' value='Add Item'></form>"
-		document.getElementById('edit').innerHTML = x;
+		var x = "<a href='/wardrobe' style='float:right; width:10px; height:10px;'><i class='far fa-window-close'></i></a><p>Edit Clothes:</p><form action='/edit?id="+id+"' method='post' id='frm1'><input type='text' name='name' required placeholder='Name'><input class='button' type='submit' value='Edit Item'></form>"
+		document.querySelector('.content').innerHTML = x;
 
 	}
 
