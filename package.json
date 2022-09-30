@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./app.js"
+    "start": "node ./index.js",
+    "test": "node_modules/mocha/bin/mocha ./test"
   },
   "repository": {
     "type": "git",
@@ -11,6 +12,9 @@
   },
   "dependencies": {
     "@google-cloud/firestore": "^3.7.2",
+    "@google-cloud/storage": "^4.7.0",
+    "@google-cloud/vision": "^2.0.0",
+    "algorithmia": "^0.3.10",
     "body-parser": "^1.19.0",
     "connect-ensure-login": "^0.1.1",
     "cookie-parser": "~1.4.4",
@@ -19,16 +23,24 @@
     "express": "^4.16.4",
     "express-session": "^1.17.0",
     "formidable": "^1.2.2",
-    "fs": "0.0.1-security",
-    "lowdb": "^1.0.0",
     "morgan": "~1.9.1",
+    "multer": "^1.4.2",
     "passport": "^0.4.1",
     "passport-local": "^1.0.0",
     "path": "^0.12.7",
+    "sharp": "^0.25.3",
     "url": "^0.11.0"
   },
   "description": "An application designed to suggest an outfit to the user based upon their preferences and wardrobe.",
   "main": "app.js",
   "author": "Adam Malyshev",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^7.2.0",
+    "superagent": "^5.2.2",
+    "supertest": "^4.0.2",
+    "tap-spec": "^5.0.0",
+    "tape": "^5.0.1"
+  }
 }

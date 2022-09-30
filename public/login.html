@@ -1,18 +1,30 @@
 <!DOCTYPE html>
 <html>
-<body>
-   <form action="/login" method="post">
-     <div>
-         <label>Username:</label>
-         <input type="text" name="username"/>
-     </div>
-     <div>
-         <label>Password:</label>
-         <input type="password" name="password"/>
-     </div>
-     <div>
-         <input type="submit" value="Log In"/>
-     </div>
- </form>
-</body>
+  <head>
+    <link rel="stylesheet" href="/page/stylesheets/style.css">
+  </head>
+  <body>
+    <div class="header">
+      <h2>fitfinder</h2>
+    </div>
+    <div class="topnav">
+      <a href="/login" class="account active"> Log In</a>
+      <a href="/register" class="account"> Sign Up </a>
+    </div>
+    <div class="content" id="login">
+     <form action="/login" method="post">
+       <div>
+           <label>Username:</label>
+           <input class="text" type="text" name="username"/>
+       </div>
+       <div>
+           <label>Password:</label>
+           <input class="text" type="password" name="password"/>
+       </div>
+       <div>
+           <input class="button" type="submit" value="Log In"/>
+       </div>
+     </form>
+   </div>
+  </body>
 </htmL>
